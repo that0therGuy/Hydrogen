@@ -4,8 +4,8 @@ from backend import *
 app = Flask(__name__)
 
 create_pages(app)
-create_http_api(app)
-create_websocket_api()
+create_api(app)
 
 if __name__ == '__main__':
-    app.run(port=get_env_var('PORT') | 8080)
+    print(f"Starting server on port {get_env_var('PORT') or 8080}...")
+    app.run(port=get_env_var('PORT') or 8080)
