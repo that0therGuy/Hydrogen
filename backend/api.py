@@ -13,9 +13,12 @@ def create_api(app: Flask):
 
     @app.route('/api/simulate', methods=['POST'])
     def simulate():
-        data = request.get_json()
-        template = json.dumps(data)
-        args = axtools.reads(template)
+        try:
+            data = request.get_json()
+            template = json.dumps(data)
+            args = axtools.reads(template)
+        except:
+            return jsonify({"status": "parsing-error", "message": "Invalid JSON body."}), 400
         id = hashlib.sha256(template.encode()).hexdigest()
         _queue.put((id, args))
         return jsonify({"status": "in-queue", "id": id})
@@ -23,11 +26,11 @@ def create_api(app: Flask):
     @app.route('/api/simulation/<id>', methods=['GET'])
     def simulation(id):
         if id in _queue.queue:
-            return jsonify({"status": "in-queue"})
+            return jsonify({"status": "in-queue"}), 202
         elif id in _results:
-            return jsonify({"status": "done", "result": _results[id]})
+            return jsonify({"status": "done", "result": _results[id]}), 200
         else:
-            return jsonify({"status": "not-found"})
+            return jsonify({"status": "not-found"}), 404
         
     def process():
         while True:
@@ -36,6 +39,6 @@ def create_api(app: Flask):
                 axtools.load(args)
                 _results[id] = axtools.saves(args)
                 _queue.task_done()
-            time.sleep(1)
+            time.sleep(0.1)
     
     threading.Thread(target=process, daemon=True).start()
